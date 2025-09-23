@@ -1,56 +1,104 @@
 import streamlit as st
 from openai import OpenAI
+from google import genai
+import os
+from google.genai import types
+from openai import OpenAI
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
+
+st.set_page_config(
+    page_title="Hello",
+    page_icon="👋",
 )
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+# Show title and description.
+st.title("🌱 Sustainable AI")
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+with st.sidebar:
+    st.text("Jou (leer)profiel:")
+    if "profiel" in st.session_state:
+        st.markdown(st.session_state.profiel)
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# openai_api_key = st.text_input("OpenAI API Key", type="password")
+google_key = os.getenv('GOOGLE_API')
+OR_key = os.getenv('OPEN_ROUTER_API')
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
 
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+client2 = OpenAI(
+  base_url="https://openrouter.ai/api/v1",
+  api_key=OR_key
+)
 
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
 
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+
+# Create a client.
+client = genai.Client(api_key = google_key)
+if "chat" not in st.session_state:
+    st.session_state.chat = client.chats.create(model="gemini-2.5-flash",
+                      config=types.GenerateContentConfig(
+                system_instruction="""Je bent een vriendelijke chatbot in Vlaanderen die een kort en informeel startgesprek heeft met de gebruiker voordat de gebruiker start met de leermodules over AI.
+                    Pas je wat betreft de taal aan aan de gebruiker. 
+                    Je doel is om snel een beeld te vormen van de gebruiker, zonder dat het voelt als een interview. 
+                    Stuur het gesprek naar:
+                    - Leeftijd en opleidingsniveau (bijv. lager, middelbaar, universitair).
+                    - Taalvaardigheid (moedertaal, voorkeur voor instructietaal).
+                    - Reden om deel te nemen (werkgerelateerd, verplicht voor studie, persoonlijke interesse).
+                    - Digitale geletterdheid (beginner, gemiddeld, gevorderd).
+                    - Voorkeursleerstijl (tekst lezen, video, audio/podcast, interactieve oefeningen).
+                    - Huidige kennisniveau van AI (geen, basis, gemiddeld, gevorderd).
+                    - Ervaring met AI-tools (bijv. ChatGPT, DALL·E, Midjourney, Copilot, AI in MS Office/Google).
+                    - Houding tegenover AI: nieuwsgierig, sceptisch, kritisch, enthousiast.
+                    - Specifieke interesses (Praktisch gebruik, Technisch, Ethisch/juridisch, Toekomst, ...)
+
+                    Hou je reacties kort, vriendelijk en menselijk. 
+                    Vermijd formele testvragen of opsommingen; laat het voelen als een natuurlijk gesprek.
+                    Vraag niet te hard door, ga op tijd over naar een ander onderwerp."""))
+
+# Create a session state variable to store the chat messages. This ensures that the
+# messages persist across reruns.
+
+# Display the existing chat messages via `st.chat_message`.
+for message in st.session_state.chat.get_history():
+    with st.chat_message(message.role):
+        st.markdown(message.parts[0].text)
+
+# Create a chat input field to allow the user to enter a message. This will display
+# automatically at the bottom of the page.
+if prompt := st.chat_input("..."):
+
+    # Store and display the current prompt.
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Generate a response using the OpenAI API.
+    response = st.session_state.chat.send_message(prompt)
+    with st.chat_message("model"): #assistant
+        st.markdown(response.text)
+
+
+client_profile = genai.Client(api_key = google_key)
+if st.session_state.chat.get_history():
+    prompt = f"""Maak op basis van het CHATGESPREK een beknopt profiel aan van de gebruiker.
+    Concentreer je op volgende informatie:
+    - Leeftijd en opleidingsniveau (bijv. lager, middelbaar, universitair).
+    - Taalvaardigheid (moedertaal, voorkeur voor instructietaal).
+    - Reden om deel te nemen (werkgerelateerd, verplicht voor studie, persoonlijke interesse).
+    - Digitale geletterdheid (beginner, gemiddeld, gevorderd).
+    - Voorkeursleerstijl (tekst lezen, video, audio/podcast, interactieve oefeningen).
+    - Huidige kennisniveau van AI (geen, basis, gemiddeld, gevorderd).
+    - Ervaring met AI-tools (bijv. ChatGPT, DALL·E, Midjourney, Copilot, AI in MS Office/Google).
+    - Houding tegenover AI: nieuwsgierig, sceptisch, kritisch, enthousiast.
+    - Specifieke interesses (Praktisch gebruik, Technisch, Ethisch/juridisch, Toekomst, ...)
+
+    CHATGESPREK:
+    {st.session_state.chat.get_history()}
+
+    Profiel:
+    """
+    print(prompt)
+    response = client_profile.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
+    st.session_state.profiel = response.text
