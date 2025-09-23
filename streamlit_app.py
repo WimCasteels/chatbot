@@ -30,6 +30,17 @@ client2 = OpenAI(
   api_key=OR_key
 )
 
+completion = client2.chat.completions.create(
+  model="x-ai/grok-4-fast:free",
+  messages=[
+    {
+      "role": "user",
+      "content": "What is the meaning of life?"
+    }
+  ]
+)
+st.write(completion.choices[0].message.content)
+
 
 
 # Create a client.
