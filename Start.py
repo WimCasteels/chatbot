@@ -2,7 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import os
 
-st.session_state.model = "mistralai/mistral-nemo"
+st.session_state.model = "openai/gpt-oss-120b"
 
 st.set_page_config(
     page_title="SusAI",
