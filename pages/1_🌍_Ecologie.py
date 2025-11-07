@@ -59,12 +59,15 @@ st.write(f"# {list(inhoud.keys())[st.session_state.progress]}")
 
 if st.button("➡️ Volgende ➡️"):
     st.session_state.progress += 1
-    st.session_state["modul"] = list(inhoud.keys())[st.session_state.progress]
+    if st.session_state.progress >= len(inhoud):
+        st.session_state.progress = 0
+    else:
+        st.session_state["modul"] = list(inhoud.keys())[st.session_state.progress]
     st.rerun()
 
 
 inhoud_values = list(inhoud.values())
-
+ 
 # wat als het profiel aangepast wordt???
 if "messages_ec" not in st.session_state:
     system_instruction=f"""Je bent een online leercoach die gebruikers begeleidt door een reeks modules over de ecologische voetafdruk van AI.
