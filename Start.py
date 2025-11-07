@@ -2,10 +2,11 @@ import streamlit as st
 from openai import OpenAI
 import os
 
+st.session_state.model = "mistralai/mistral-nemo"
 
 st.set_page_config(
-    page_title="Hello",
-    page_icon="👋",
+    page_title="SusAI",
+    page_icon="🌱",
 )
 
 
@@ -58,7 +59,7 @@ if "messages" not in st.session_state:
     
 
     openingszin = st.session_state.client.chat.completions.create(
-            model="x-ai/grok-4-fast:free",
+            model=st.session_state.model,
             messages=[{'role': 'system', 'content': system_instruction},
                       {'role': 'user', 'content': "hey"}],
         ).choices[0].message.content
@@ -81,7 +82,7 @@ if prompt := st.chat_input("..."):
 
     with st.chat_message("assistant"):
         stream = st.session_state.client.chat.completions.create(
-            model="x-ai/grok-4-fast:free",
+            model=st.session_state.model,
             messages=[{'role': 'system', 'content': f"Huidig profiel: {st.session_state.profiel}"}] + [
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
@@ -116,7 +117,7 @@ if st.session_state.messages:
     Profiel:
     """
     response = st.session_state.client.chat.completions.create(
-        model="x-ai/grok-4-fast:free",
+        model=st.session_state.model,
         messages=[
         {
           "role": "user",
@@ -125,6 +126,8 @@ if st.session_state.messages:
         ]
     )
     st.session_state.profiel = response.choices[0].message.content
+
+    st.sidebar.header("👤 Profiel")
 
     with st.sidebar:
         st.markdown(st.session_state.profiel)
